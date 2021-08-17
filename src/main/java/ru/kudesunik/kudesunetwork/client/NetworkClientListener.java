@@ -15,7 +15,7 @@ public interface NetworkClientListener extends NetworkListener {
 	
 	public void onPacketReceive(Packet packet);
 	
-	public void onPing(int count);
+	public boolean onPing(long id, long sendedTimestamp, long receivedTimestamp);
 	
 	public void onDisconnection();
 }

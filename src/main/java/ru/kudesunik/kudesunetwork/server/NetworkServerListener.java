@@ -24,7 +24,7 @@ public interface NetworkServerListener extends NetworkListener {
 	
 	public void onPacketReceive(int port, Packet packet);
 	
-	public void onPing(int port, int count);
+	public boolean onPing(int port, long id, long sendedTimestamp, long receivedTimestamp);
 	
 	public void onDisconnection(int port);
 }

@@ -1,24 +1,25 @@
-package ru.kudesunik.kudesocket.examples.rawpacket;
+package ru.kudesunik.kudesocket.examples.ping;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
 import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.server.KudesuNetworkServer;
 
-public class RawPacketServer {
+public class PingPacketServer {
 	
-	private final RawServerNetworkListener handler;
+	private final PingServerNetworkListener handler;
 	private final NetworkParameters parameters;
 	
-	public RawPacketServer() {
-		this.handler = new RawServerNetworkListener();
+	public PingPacketServer() {
+		this.handler = new PingServerNetworkListener();
 		this.parameters = new NetworkParameters();
+		this.parameters.setAuthorization("Login", "Password");
 	}
 	
 	private void start() {
-		KudesuNetworkServer server = KudesuNetwork.createServer(8888, null, handler, parameters, false);
+		KudesuNetworkServer server = KudesuNetwork.createServer(8888, null, handler, parameters);
 		server.start();
 		try {
-			Thread.sleep(20000);
+			Thread.sleep(30000);
 		} catch(InterruptedException ex) {
 			ex.printStackTrace();
 		}
@@ -26,6 +27,6 @@ public class RawPacketServer {
 	}
 	
 	public static void main(String[] args) {
-		(new RawPacketServer()).start();
+		(new PingPacketServer()).start();
 	}
 }

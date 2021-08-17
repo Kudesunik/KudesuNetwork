@@ -32,12 +32,12 @@ public class RawServerNetworkListener implements NetworkServerListener {
 	
 	@Override
 	public boolean onHandshake(int port, String protocolName, int protocolVersion) {
-		return false; //No use
+		return false; //No use with raw packet
 	}
 	
 	@Override
 	public boolean onAuthorization(int port, String data) {
-		return false; //No use
+		return false; //No use with raw packet
 	}
 	
 	@Override
@@ -48,8 +48,8 @@ public class RawServerNetworkListener implements NetworkServerListener {
 	}
 	
 	@Override
-	public void onPing(int port, int count) {
-		
+	public boolean onPing(int port, long id, long sendedTimestamp, long receivedTimestamp) {
+		return false;  //No use with raw packet
 	}
 	
 	@Override

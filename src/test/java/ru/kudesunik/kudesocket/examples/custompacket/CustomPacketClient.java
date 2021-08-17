@@ -1,8 +1,8 @@
 package ru.kudesunik.kudesocket.examples.custompacket;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
-import ru.kudesunik.kudesunetwork.NetworkParameters;
 import ru.kudesunik.kudesunetwork.client.KudesuNetworkClient;
+import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 
 public class CustomPacketClient {
 	

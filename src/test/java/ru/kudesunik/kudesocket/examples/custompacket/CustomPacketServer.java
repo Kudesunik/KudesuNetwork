@@ -1,7 +1,7 @@
 package ru.kudesunik.kudesocket.examples.custompacket;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
-import ru.kudesunik.kudesunetwork.NetworkParameters;
+import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.server.KudesuNetworkServer;
 
 public class CustomPacketServer {
@@ -21,7 +21,7 @@ public class CustomPacketServer {
 		KudesuNetworkServer server = KudesuNetwork.createServer(8888, registrator, handler, parameters);
 		server.start();
 		try {
-			Thread.sleep(10000);
+			Thread.sleep(30000);
 		} catch(InterruptedException ex) {
 			ex.printStackTrace();
 		}

@@ -9,9 +9,14 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import org.apache.logging.log4j.Level;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
+import ru.kudesunik.kudesunetwork.annotations.NonNull;
 import ru.kudesunik.kudesunetwork.annotations.ThreadSafe;
 import ru.kudesunik.kudesunetwork.packet.Packet;
+import ru.kudesunik.kudesunetwork.packet.Packet3Ping;
 import ru.kudesunik.kudesunetwork.packet.Packet4Raw;
+import ru.kudesunik.kudesunetwork.parameters.PingParameters;
+import ru.kudesunik.kudesunetwork.util.task.TaskManager;
+import ru.kudesunik.kudesunetwork.util.task.TaskManagerTask;
 
 public class NetworkWorker implements Runnable {
 	
@@ -21,10 +26,13 @@ public class NetworkWorker implements Runnable {
 	private final ConcurrentLinkedDeque<Packet> recievedPackets;
 	private final ConcurrentLinkedDeque<Packet> packetsToSend;
 	
+	private final PingParameters pingParameters;
+	
 	private volatile boolean isWorking;
 	
 	public NetworkWorker(NetworkHandler handler, boolean useProtocol) {
 		this.handler = handler;
+		this.pingParameters = handler.getParameters().getPingParameters();
 		this.outputStream = handler.getOutputStream();
 		this.recievedPackets = new ConcurrentLinkedDeque<>();
 		this.packetsToSend = new ConcurrentLinkedDeque<>();
@@ -35,8 +43,17 @@ public class NetworkWorker implements Runnable {
 	 * Put received packet to worker queue for further sending it to listener
 	 * @param packet - recieved packet
 	 */
-	@ThreadSafe(callerThread = "KudeSocket Reader")
+	@ThreadSafe(callerThread = "KudesuNetwork Reader")
 	public void receivePacket(Packet packet) {
+		if(packet.getId() == Packet3Ping.ID) {
+			Packet3Ping pingPacket = (Packet3Ping) packet;
+			if(pingPacket.getNetworkSide() == handler.getNetworkSide()) {
+				pingPacket.setTimestampReceived(); //Set real receive timestamp and handle it
+			} else {
+				givePacketToSend(pingPacket); //Send packet back safely, don't handle
+				return;
+			}
+		}
 		synchronized(recievedPackets) {
 			this.recievedPackets.addLast(packet);
 		}
@@ -48,7 +65,7 @@ public class NetworkWorker implements Runnable {
 	/**
 	 * Send recieved packet to listener
 	 */
-	@ThreadSafe(callerThread = "KudeSocket Worker")
+	@ThreadSafe(callerThread = "KudesuNetwork Worker")
 	private void sendReceivedPacket() {
 		Packet packet;
 		synchronized(recievedPackets) {
@@ -78,37 +95,46 @@ public class NetworkWorker implements Runnable {
 	/**
 	 * Send packet in queue to server or client
 	 */
-	@ThreadSafe(callerThread = "KudeSocket Worker")
+	@ThreadSafe(callerThread = "KudesuNetwork Worker")
 	private void sendPacket() {
 		Packet packet;
 		synchronized(packetsToSend) {
 			packet = packetsToSend.poll();
 		}
 		if(packet != null) {
+			sendPacket(packet);
+		}
+	}
+	
+	@ThreadSafe(callerThread = "KudesuNetwork Worker")
+	private void sendPacket(@NonNull Packet packet) {
+		byte packetId = packet.getId();
+		if(handler.isPacketExist(packetId)) {
+			if(packet.getId() == Packet3Ping.ID) {
+				Packet3Ping pingPacket = (Packet3Ping) packet;
+				pingPacket.setTimestampSended();
+			}
 			if(packet.getId() == Packet4Raw.ID) {
 				sendRawPacket(packet);
 				return;
 			}
-			byte packetId = packet.getId();
-			if(handler.isPacketExist(packetId)) {
-				ByteArrayOutputStream data = new ByteArrayOutputStream();
-				DataOutputStream packetData = new DataOutputStream(data);
-				DataOutputStream overallData = new DataOutputStream(outputStream);
-				try {
-					packet.write(packetData);
-					overallData.writeByte(packetId);
-					overallData.writeShort(packetData.size());
-					overallData.write(data.toByteArray());
-				} catch(IOException ex) {
-					handler.requestDropConnection();
-				}
-			} else {
-				KudesuNetwork.log(Level.ERROR, "Packet not found!");
+			ByteArrayOutputStream data = new ByteArrayOutputStream();
+			DataOutputStream packetData = new DataOutputStream(data);
+			DataOutputStream overallData = new DataOutputStream(outputStream);
+			try {
+				packet.write(packetData);
+				overallData.writeByte(packetId);
+				overallData.writeShort(packetData.size());
+				overallData.write(data.toByteArray());
+			} catch(IOException ex) {
+				handler.requestDropConnection();
 			}
+		} else {
+			KudesuNetwork.log(Level.ERROR, "Packet not found!");
 		}
 	}
 	
-	@ThreadSafe(callerThread = "KudeSocket Worker")
+	@ThreadSafe(callerThread = "KudesuNetwork Worker")
 	private void sendRawPacket(Packet packet) {
 		try {
 			packet.write(new DataOutputStream(outputStream));
@@ -128,6 +154,15 @@ public class NetworkWorker implements Runnable {
 	@Override
 	public void run() {
 		boolean repeatFlag = true;
+		if(pingParameters.isEnabled() && handler.useProtocol()) {
+			TaskManagerTask task = new TaskManagerTask("Ping task", () -> {
+				Packet3Ping pingPacket = new Packet3Ping();
+				pingPacket.setSide(handler.getNetworkSide());
+				givePacketToSend(pingPacket);
+			});
+			task.setUpdateTime(pingParameters.getDelay());
+			TaskManager.execute(task);
+		}
 		while(isWorking) {
 			synchronized(recievedPackets) {
 				while(!recievedPackets.isEmpty()) {

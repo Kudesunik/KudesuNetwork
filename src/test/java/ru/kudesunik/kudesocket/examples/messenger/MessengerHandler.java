@@ -1,10 +1,10 @@
 package ru.kudesunik.kudesocket.examples.messenger;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
-import ru.kudesunik.kudesunetwork.NetworkParameters;
 import ru.kudesunik.kudesunetwork.client.KudesuNetworkClient;
 import ru.kudesunik.kudesunetwork.client.NetworkClientListener;
 import ru.kudesunik.kudesunetwork.packet.PacketRegistrator;
+import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.server.KudesuNetworkServer;
 import ru.kudesunik.kudesunetwork.server.NetworkServerListener;
 

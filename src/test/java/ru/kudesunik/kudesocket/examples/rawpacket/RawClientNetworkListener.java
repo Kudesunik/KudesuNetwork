@@ -25,12 +25,12 @@ public class RawClientNetworkListener implements NetworkClientListener {
 	
 	@Override
 	public boolean onHandshake(String protocolName, int protocolVersion) {
-		return false; //No use
+		return false; //No use with raw packet
 	}
 	
 	@Override
 	public boolean onAuthorization(String data) {
-		return false; //No use
+		return false; //No use with raw packet
 	}
 	
 	@Override
@@ -41,8 +41,8 @@ public class RawClientNetworkListener implements NetworkClientListener {
 	}
 	
 	@Override
-	public void onPing(int count) {
-		//Not yet done
+	public boolean onPing(long id, long sendedTimestamp, long receivedTimestamp) {
+		return false; //No use with raw packet
 	}
 	
 	@Override

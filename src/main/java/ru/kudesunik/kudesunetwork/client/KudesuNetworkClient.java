@@ -7,10 +7,10 @@ import org.apache.logging.log4j.Level;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
 import ru.kudesunik.kudesunetwork.NetworkBase;
-import ru.kudesunik.kudesunetwork.NetworkParameters;
 import ru.kudesunik.kudesunetwork.handler.NetworkHandler;
 import ru.kudesunik.kudesunetwork.packet.Packet;
 import ru.kudesunik.kudesunetwork.packet.PacketRegistrator;
+import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 
 public class KudesuNetworkClient extends NetworkBase {
 	

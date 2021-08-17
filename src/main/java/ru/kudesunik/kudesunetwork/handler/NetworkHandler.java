@@ -12,12 +12,13 @@ import org.apache.logging.log4j.Level;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
 import ru.kudesunik.kudesunetwork.NetworkBase;
-import ru.kudesunik.kudesunetwork.NetworkParameters;
 import ru.kudesunik.kudesunetwork.annotations.ThreadSafe;
 import ru.kudesunik.kudesunetwork.client.NetworkClientListener;
 import ru.kudesunik.kudesunetwork.packet.Packet;
 import ru.kudesunik.kudesunetwork.packet.Packet1Handshake;
 import ru.kudesunik.kudesunetwork.packet.Packet2Authorization;
+import ru.kudesunik.kudesunetwork.packet.Packet3Ping;
+import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.server.NetworkServerListener;
 import ru.kudesunik.kudesunetwork.util.NamedThreadFactory;
 import ru.kudesunik.kudesunetwork.util.task.TaskManager;
@@ -45,6 +46,8 @@ public class NetworkHandler {
 	private final ExecutorService readerExecutorService;
 	private final ExecutorService workerExecutorService;
 	
+	private final NetworkSide networkSide;
+	
 	private final NetworkReader networkReader;
 	private final NetworkWorker networkWorker;
 	
@@ -58,8 +61,10 @@ public class NetworkHandler {
 		this.outputStream = socket.getOutputStream();
 		if(listener instanceof NetworkClientListener) {
 			this.clientListener = (NetworkClientListener) listener;
+			this.networkSide = NetworkSide.CLIENT;
 		} else {
 			this.serverListener = (NetworkServerListener) listener;
+			this.networkSide = NetworkSide.SERVER;
 		}
 		this.parameters = parameters;
 		this.useProtocol = useProtocol;
@@ -84,7 +89,7 @@ public class NetworkHandler {
 		}
 	}
 	
-	@ThreadSafe(callerThread = "KudeSocket Worker")
+	@ThreadSafe(callerThread = "KudesuNetwork Worker")
 	public void receivePacket(Packet packet) {
 		switch(packet.getId()) {
 		case Packet1Handshake.ID:
@@ -93,8 +98,11 @@ public class NetworkHandler {
 		case Packet2Authorization.ID:
 			receiveAuthorizationPacket((Packet2Authorization) packet);
 			break;
+		case Packet3Ping.ID:
+			receivePingPacket((Packet3Ping) packet);
+			break;
 		default:
-			if(clientListener != null) {
+			if(networkSide == NetworkSide.CLIENT) {
 				clientListener.onPacketReceive(packet);
 			} else {
 				serverListener.onPacketReceive(socket.getPort(), packet);
@@ -102,10 +110,10 @@ public class NetworkHandler {
 		}
 	}
 	
-	@ThreadSafe(callerThread = "KudeSocket Worker")
+	@ThreadSafe(callerThread = "KudesuNetwork Worker")
 	private void receiveHandshakePacket(Packet1Handshake packet) {
 		boolean result = false;
-		if(clientListener != null) {
+		if(networkSide == NetworkSide.CLIENT) {
 			result = clientListener.onHandshake(packet.getProtocolName(), packet.getProtocolVersion());
 		} else {
 			result = serverListener.onHandshake(socket.getPort(), packet.getProtocolName(), packet.getProtocolVersion());
@@ -116,10 +124,10 @@ public class NetworkHandler {
 		}
 	}
 	
-	@ThreadSafe(callerThread = "KudeSocket Worker")
+	@ThreadSafe(callerThread = "KudesuNetwork Worker")
 	private void receiveAuthorizationPacket(Packet2Authorization packet) {
 		boolean result = false;
-		if(clientListener != null) {
+		if(networkSide == NetworkSide.CLIENT) {
 			result = clientListener.onAuthorization(packet.getData());
 		} else {
 			result = serverListener.onAuthorization(socket.getPort(), packet.getData());
@@ -132,29 +140,23 @@ public class NetworkHandler {
 		}
 	}
 	
+	@ThreadSafe(callerThread = "KudesuNetwork Worker")
+	private void receivePingPacket(Packet3Ping packet) {
+		boolean result = false;
+		if(networkSide == NetworkSide.CLIENT) {
+			result = clientListener.onPing(packet.getPingId(), packet.getTimestampSended(), packet.getTimestampReceived());
+		} else {
+			result = serverListener.onPing(socket.getPort(), packet.getPingId(), packet.getTimestampSended(), packet.getTimestampReceived());
+		}
+		if(!result) {
+			KudesuNetwork.log(Level.ERROR, "Ping check failed!");
+			requestDropConnection();
+		}
+	}
+	
 	@ThreadSafe(callerThread = "Unknown")
 	public void sendPacket(Packet packet) {
 		networkWorker.givePacketToSend(packet);
-	}
-	
-	public boolean isAlive() {
-		return socket.isConnected() && !socket.isClosed();
-	}
-	
-	public boolean isPacketExist(int packetId) {
-		return base.isPacketExist(packetId);
-	}
-	
-	public boolean isProtocolPacket(int packetId) {
-		return base.isProtocolPacket(packetId);
-	}
-	
-	public Packet getPacketContainer(int packetId) {
-		return base.getPacketContainer(packetId);
-	}
-	
-	public boolean isNetworkReady() {
-		return isNetworkReady;
 	}
 	
 	@ThreadSafe(callerThread = "Unknown")
@@ -182,7 +184,7 @@ public class NetworkHandler {
 		stopWorkerThreads();
 		base.onConnectionDropped(socket.getPort());
 		KudesuNetwork.log(Level.INFO, "Connection closed: " + socket.getInetAddress() + ":" + socket.getPort() + " / " + socket.getLocalPort());
-		if(clientListener != null) {
+		if(networkSide == NetworkSide.CLIENT) {
 			clientListener.onDisconnection();
 		} else {
 			serverListener.onDisconnection(socket.getLocalPort());
@@ -219,11 +221,43 @@ public class NetworkHandler {
 		}
 	}
 	
+	public boolean isAlive() {
+		return socket.isConnected() && !socket.isClosed();
+	}
+	
+	public boolean isPacketExist(int packetId) {
+		return base.isPacketExist(packetId);
+	}
+	
+	public boolean isProtocolPacket(int packetId) {
+		return base.isProtocolPacket(packetId);
+	}
+	
+	public Packet getPacketContainer(int packetId) {
+		return base.getPacketContainer(packetId);
+	}
+	
+	public boolean isNetworkReady() {
+		return isNetworkReady;
+	}
+	
 	public InputStream getInputStream() {
 		return inputStream;
 	}
 	
 	public OutputStream getOutputStream() {
 		return outputStream;
+	}
+	
+	public boolean useProtocol() {
+		return useProtocol;
+	}
+	
+	public NetworkParameters getParameters() {
+		return parameters;
+	}
+	
+	public NetworkSide getNetworkSide() {
+		return networkSide;
 	}
 }

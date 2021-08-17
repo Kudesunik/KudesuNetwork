@@ -14,11 +14,11 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
 import ru.kudesunik.kudesunetwork.NetworkBase;
-import ru.kudesunik.kudesunetwork.NetworkParameters;
 import ru.kudesunik.kudesunetwork.annotations.ThreadSafe;
 import ru.kudesunik.kudesunetwork.handler.NetworkHandler;
 import ru.kudesunik.kudesunetwork.packet.Packet;
 import ru.kudesunik.kudesunetwork.packet.PacketRegistrator;
+import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.util.NamedThreadFactory;
 
 public class KudesuNetworkServer extends NetworkBase {
@@ -35,7 +35,7 @@ public class KudesuNetworkServer extends NetworkBase {
 		super(port, registrator, parameters, useProtocol);
 		this.listener = listener;
 		this.listener.bind(this);
-		this.connectionExecutorService = Executors.newSingleThreadExecutor(new NamedThreadFactory("KudeSocket Connection", false));
+		this.connectionExecutorService = Executors.newSingleThreadExecutor(new NamedThreadFactory("KudesuNetwork Connection", false, false));
 		this.handlers = Int2ObjectMaps.synchronize(new Int2ObjectArrayMap<>());
 	}
 	
@@ -108,6 +108,10 @@ public class KudesuNetworkServer extends NetworkBase {
 		return !serverSocket.isClosed();
 	}
 	
+	/**
+	 * Stops server and disconnects all clients normally;
+	 * <br>This must be called to stop server (or program in general) cause connection listener thread is not daemon
+	 */
 	public void stop() {
 		KudesuNetwork.log(Level.INFO, "Stopping server...");
 		try {

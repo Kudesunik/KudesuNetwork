@@ -9,6 +9,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import ru.kudesunik.kudesunetwork.annotations.Nullable;
 import ru.kudesunik.kudesunetwork.packet.Packet;
 import ru.kudesunik.kudesunetwork.packet.PacketRegistrator;
+import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 
 public abstract class NetworkBase {
 	

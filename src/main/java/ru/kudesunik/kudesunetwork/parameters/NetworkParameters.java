@@ -1,4 +1,4 @@
-package ru.kudesunik.kudesunetwork;
+package ru.kudesunik.kudesunetwork.parameters;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -8,12 +8,14 @@ import ru.kudesunik.kudesunetwork.annotations.Nullable;
 public class NetworkParameters {
 	
 	private boolean sendHandshake;
+	private PingParameters pingParameters;
 	
 	private String authorizationData;
 	
 	public NetworkParameters() {
 		this.sendHandshake = true;
 		this.authorizationData = null;
+		this.pingParameters = PingParameters.defaultPing();
 	}
 	
 	public @Nullable String getAuthorization() {
@@ -30,5 +32,13 @@ public class NetworkParameters {
 	
 	public void setSendHandshake(boolean send) {
 		this.sendHandshake = send;
+	}
+	
+	public PingParameters getPingParameters() {
+		return pingParameters;
+	}
+	
+	public void setPingParameters(PingParameters pingParameters) {
+		this.pingParameters = pingParameters;
 	}
 }

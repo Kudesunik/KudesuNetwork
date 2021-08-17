@@ -52,8 +52,8 @@ public class CustomServerNetworkListener implements NetworkServerListener {
 	}
 	
 	@Override
-	public void onPing(int port, int count) {
-		
+	public boolean onPing(int port, long id, long sendedTimestamp, long receivedTimestamp) {
+		return true;
 	}
 	
 	@Override

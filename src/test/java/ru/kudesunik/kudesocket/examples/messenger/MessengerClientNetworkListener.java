@@ -45,8 +45,8 @@ public class MessengerClientNetworkListener implements NetworkClientListener {
 	}
 	
 	@Override
-	public void onPing(int count) {
-		//Not yet done
+	public boolean onPing(long id, long sendedTimestamp, long receivedTimestamp) {
+		return true;
 	}
 	
 	@Override

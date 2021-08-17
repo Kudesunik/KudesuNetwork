@@ -1,4 +1,4 @@
-package ru.kudesunik.kudesocket.examples.messenger;
+package ru.kudesunik.kudesocket.examples.ping;
 
 import java.net.InetAddress;
 
@@ -7,13 +7,9 @@ import ru.kudesunik.kudesunetwork.packet.Packet;
 import ru.kudesunik.kudesunetwork.server.KudesuNetworkServer;
 import ru.kudesunik.kudesunetwork.server.NetworkServerListener;
 
-public class MessengerServerNetworkListener implements NetworkServerListener {
+public class PingServerNetworkListener implements NetworkServerListener {
 	
 	private KudesuNetworkServer server;
-	
-	public MessengerServerNetworkListener(MessengerHandler messengerHandler) {
-		
-	}
 	
 	@Override
 	public void bind(KudesuNetworkServer server) {
@@ -37,11 +33,27 @@ public class MessengerServerNetworkListener implements NetworkServerListener {
 	
 	@Override
 	public void onPacketReceive(int port, Packet packet) {
-		
+		System.out.println("Packet received: " + packet.getId() + ", this is not good!"); //Nothing should happen
 	}
 	
 	@Override
 	public boolean onPing(int port, long id, long sendedTimestamp, long receivedTimestamp) {
+		long ping = (receivedTimestamp - sendedTimestamp) / 2;
+		StringBuilder sb = new StringBuilder();
+		sb.append("Ping received: ");
+		sb.append(id);
+		sb.append(" from port: ");
+		sb.append(port);
+		sb.append("; Sended: ");
+		sb.append(sendedTimestamp);
+		sb.append("; Received: ");
+		sb.append(receivedTimestamp);
+		sb.append("; Ping: ");
+		sb.append(ping / 1000000);
+		sb.append(" ms (");
+		sb.append(ping / 1000000.0f);
+		sb.append(" ms)");
+		System.out.println(sb.toString());
 		return true;
 	}
 	

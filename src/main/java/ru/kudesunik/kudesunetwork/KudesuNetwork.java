@@ -20,6 +20,7 @@ import ru.kudesunik.kudesunetwork.packet.Packet2Authorization;
 import ru.kudesunik.kudesunetwork.packet.Packet3Ping;
 import ru.kudesunik.kudesunetwork.packet.Packet4Raw;
 import ru.kudesunik.kudesunetwork.packet.PacketRegistrator;
+import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.server.KudesuNetworkServer;
 import ru.kudesunik.kudesunetwork.server.NetworkServerListener;
 import ru.kudesunik.kudesunetwork.util.Utilities;

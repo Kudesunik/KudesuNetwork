@@ -1,17 +1,13 @@
-package ru.kudesunik.kudesocket.examples.custompacket;
+package ru.kudesunik.kudesocket.examples.ping;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
 import ru.kudesunik.kudesunetwork.client.KudesuNetworkClient;
 import ru.kudesunik.kudesunetwork.client.NetworkClientListener;
 import ru.kudesunik.kudesunetwork.packet.Packet;
 
-public class CustomClientNetworkListener implements NetworkClientListener {
+public class PingClientNetworkListener implements NetworkClientListener {
 	
 	private KudesuNetworkClient client;
-	
-	private void handleCustomPacket(CustomPacket packet) {
-		System.out.println("Received packet with id: " + packet.getId() + ", 1: " + packet.getCustomNumber1() + ", 2: " + packet.getCustomNumber2());
-	}
 	
 	@Override
 	public void bind(KudesuNetworkClient client) {
@@ -35,17 +31,25 @@ public class CustomClientNetworkListener implements NetworkClientListener {
 	
 	@Override
 	public void onPacketReceive(Packet packet) {
-		switch(packet.getId()) {
-		case CustomPacket.ID:
-			handleCustomPacket((CustomPacket) packet);
-			break;
-		default:
-			throw new IllegalArgumentException("Unexpected value: " + packet.getId());
-		}
+		System.out.println("Packet received: " + packet.getId() + ", this is not good!"); //Nothing should happen
 	}
 	
 	@Override
 	public boolean onPing(long id, long sendedTimestamp, long receivedTimestamp) {
+		long ping = (receivedTimestamp - sendedTimestamp) / 2;
+		StringBuilder sb = new StringBuilder();
+		sb.append("Ping received: ");
+		sb.append(id);
+		sb.append("; Sended: ");
+		sb.append(sendedTimestamp);
+		sb.append("; Received: ");
+		sb.append(receivedTimestamp);
+		sb.append("; Ping: ");
+		sb.append(ping / 1000000);
+		sb.append(" ms (");
+		sb.append(ping / 1000000.0f);
+		sb.append(" ms)");
+		System.out.println(sb.toString());
 		return true;
 	}
 	
