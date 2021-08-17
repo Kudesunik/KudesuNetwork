@@ -17,6 +17,7 @@ import ru.kudesunik.kudesunetwork.NetworkBase;
 import ru.kudesunik.kudesunetwork.annotations.ThreadSafe;
 import ru.kudesunik.kudesunetwork.handler.NetworkHandler;
 import ru.kudesunik.kudesunetwork.packet.Packet;
+import ru.kudesunik.kudesunetwork.packet.Packet5Disconnect;
 import ru.kudesunik.kudesunetwork.packet.PacketRegistrator;
 import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.util.NamedThreadFactory;
@@ -80,14 +81,15 @@ public class KudesuNetworkServer extends NetworkBase {
 	}
 	
 	@ThreadSafe(callerThread = "Unknown")
-	public void sendPacket(Packet packet, int port) {
+	public void sendPacket(int port, Packet packet) {
 		if(port == 0) {
 			sendBroadcast(packet);
 		} else {
-			NetworkHandler handler;
-			handler = handlers.get(port);
+			NetworkHandler handler = handlers.get(port);
 			if(handler != null) {
 				handler.sendPacket(packet);
+			} else {
+				KudesuNetwork.log(Level.ERROR, "No " + port + " port found to send packet");
 			}
 		}
 	}
@@ -97,6 +99,11 @@ public class KudesuNetworkServer extends NetworkBase {
 		for(NetworkHandler handler : handlers.values()) {
 			handler.sendPacket(packet);
 		}
+	}
+	
+	@ThreadSafe(callerThread = "Unknown")
+	public void disconnectClient(int port, short reason) {
+		sendPacket(port, new Packet5Disconnect(reason));
 	}
 	
 	public int getConnectedClientsCount() {
@@ -123,7 +130,7 @@ public class KudesuNetworkServer extends NetworkBase {
 		KudesuNetwork.log(Level.DEBUG, "Clients to disconnect: " + getConnectedClientsCount());
 		if(getConnectedClientsCount() > 0) {
 			for(NetworkHandler handler : handlers.values()) {
-				handler.requestDropConnection();
+				handler.requestDropConnection(true, NORMAL_DISCONNECTION);
 			}
 		}
 		KudesuNetwork.log(Level.INFO, "Server stopped!");

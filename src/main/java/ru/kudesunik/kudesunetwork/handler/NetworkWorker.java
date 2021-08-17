@@ -14,6 +14,7 @@ import ru.kudesunik.kudesunetwork.annotations.ThreadSafe;
 import ru.kudesunik.kudesunetwork.packet.Packet;
 import ru.kudesunik.kudesunetwork.packet.Packet3Ping;
 import ru.kudesunik.kudesunetwork.packet.Packet4Raw;
+import ru.kudesunik.kudesunetwork.packet.Packet5Disconnect;
 import ru.kudesunik.kudesunetwork.parameters.PingParameters;
 import ru.kudesunik.kudesunetwork.util.task.TaskManager;
 import ru.kudesunik.kudesunetwork.util.task.TaskManagerTask;
@@ -128,6 +129,9 @@ public class NetworkWorker implements Runnable {
 				overallData.write(data.toByteArray());
 			} catch(IOException ex) {
 				handler.requestDropConnection();
+			}
+			if(packet.getId() == Packet5Disconnect.ID) {
+				handler.setDisconnectSended();
 			}
 		} else {
 			KudesuNetwork.log(Level.ERROR, "Packet not found!");

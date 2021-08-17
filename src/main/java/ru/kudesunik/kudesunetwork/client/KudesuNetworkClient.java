@@ -68,7 +68,11 @@ public class KudesuNetworkClient extends NetworkBase {
 	}
 	
 	public void disconnect() {
-		clientHandler.requestDropConnection();
+		disconnect(NORMAL_DISCONNECTION);
+	}
+	
+	public void disconnect(int reason) {
+		clientHandler.requestDropConnection(true, reason);
 	}
 	
 	@Override

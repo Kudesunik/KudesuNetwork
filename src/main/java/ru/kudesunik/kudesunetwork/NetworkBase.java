@@ -13,6 +13,9 @@ import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 
 public abstract class NetworkBase {
 	
+	public static final int SEVERE_DISCONNECTION = 0;
+	public static final int NORMAL_DISCONNECTION = 1;
+	
 	private final int port;
 	private final NetworkParameters parameters;
 	private boolean useProtocol;

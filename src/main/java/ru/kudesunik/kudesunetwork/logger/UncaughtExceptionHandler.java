@@ -7,6 +7,6 @@ public class UncaughtExceptionHandler implements Thread.UncaughtExceptionHandler
 	
 	@Override
 	public void uncaughtException(Thread thread, Throwable throwable) {
-		LogManager.getRootLogger().fatal(MarkerManager.getMarker("ExceptionMarker"), "Uncaught exception at thread " + thread.getName(), throwable);
+		LogManager.getRootLogger().fatal(MarkerManager.getMarker("ExceptionMarker"), "Uncaught exception in thread " + thread.getName(), throwable);
 	}
 }

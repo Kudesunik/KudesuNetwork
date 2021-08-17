@@ -19,6 +19,7 @@ import ru.kudesunik.kudesunetwork.packet.Packet1Handshake;
 import ru.kudesunik.kudesunetwork.packet.Packet2Authorization;
 import ru.kudesunik.kudesunetwork.packet.Packet3Ping;
 import ru.kudesunik.kudesunetwork.packet.Packet4Raw;
+import ru.kudesunik.kudesunetwork.packet.Packet5Disconnect;
 import ru.kudesunik.kudesunetwork.packet.PacketRegistrator;
 import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.server.KudesuNetworkServer;
@@ -56,10 +57,11 @@ public class KudesuNetwork {
 	
 	public static @NonNull ObjectCollection<Packet> getProtocolPackets() {
 		if(protocolPackets.isEmpty()) {
-			protocolPackets.put(1, new Packet1Handshake());
-			protocolPackets.put(2, new Packet2Authorization(null));
-			protocolPackets.put(3, new Packet3Ping());
-			protocolPackets.put(4, new Packet4Raw(null));
+			protocolPackets.put(Packet1Handshake.ID, new Packet1Handshake());
+			protocolPackets.put(Packet2Authorization.ID, new Packet2Authorization(null));
+			protocolPackets.put(Packet3Ping.ID, new Packet3Ping());
+			protocolPackets.put(Packet4Raw.ID, new Packet4Raw(null));
+			protocolPackets.put(Packet5Disconnect.ID, new Packet5Disconnect(0));
 		}
 		return protocolPackets.values();
 	}
@@ -82,7 +84,7 @@ public class KudesuNetwork {
 	}
 	
 	static {
-		initializeLogger(true, true, LOGGER_LEVEL);
+		initializeLogger(true, false, LOGGER_LEVEL);
 		LOGGER = LogManager.getRootLogger();
 	}
 }

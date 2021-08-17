@@ -18,6 +18,7 @@ import ru.kudesunik.kudesunetwork.packet.Packet;
 import ru.kudesunik.kudesunetwork.packet.Packet1Handshake;
 import ru.kudesunik.kudesunetwork.packet.Packet2Authorization;
 import ru.kudesunik.kudesunetwork.packet.Packet3Ping;
+import ru.kudesunik.kudesunetwork.packet.Packet5Disconnect;
 import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.server.NetworkServerListener;
 import ru.kudesunik.kudesunetwork.util.NamedThreadFactory;
@@ -27,8 +28,11 @@ public class NetworkHandler {
 	
 	private static final int THREAD_TERMINATION_TIME = 1000;
 	
-	private static final NamedThreadFactory READER_FACTORY = new NamedThreadFactory("KudesuNetwork Reader", true);
-	private static final NamedThreadFactory WORKER_FACTORY = new NamedThreadFactory("KudesuNetwork Worker", true);
+	private static final String READER_THREAD_NAME = "KudesuNetwork Reader";
+	private static final String WORKER_THREAD_NAME = "KudesuNetwork Worker";
+	
+	private static final NamedThreadFactory READER_FACTORY = new NamedThreadFactory(READER_THREAD_NAME, true);
+	private static final NamedThreadFactory WORKER_FACTORY = new NamedThreadFactory(WORKER_THREAD_NAME, true);
 	
 	private final Socket socket;
 	private final NetworkBase base;
@@ -52,6 +56,7 @@ public class NetworkHandler {
 	private final NetworkWorker networkWorker;
 	
 	private volatile boolean isNetworkReady;
+	private volatile boolean isDisconnectPacketSended;
 	private volatile boolean isDropConnectionCalled;
 	
 	public NetworkHandler(Socket socket, NetworkBase base, NetworkListener listener, NetworkParameters parameters, boolean useProtocol) throws IOException {
@@ -73,6 +78,7 @@ public class NetworkHandler {
 		this.networkWorker = new NetworkWorker(this, useProtocol);
 		this.networkReader = new NetworkReader(this, networkWorker, useProtocol);
 		this.isNetworkReady = false;
+		this.isDisconnectPacketSended = false;
 		this.isDropConnectionCalled = false;
 	}
 	
@@ -100,6 +106,9 @@ public class NetworkHandler {
 			break;
 		case Packet3Ping.ID:
 			receivePingPacket((Packet3Ping) packet);
+			break;
+		case Packet5Disconnect.ID:
+			receiveDisconnectionPacket((Packet5Disconnect) packet);
 			break;
 		default:
 			if(networkSide == NetworkSide.CLIENT) {
@@ -154,18 +163,38 @@ public class NetworkHandler {
 		}
 	}
 	
+	public void requestDropConnection() {
+		requestDropConnection(false, NetworkBase.SEVERE_DISCONNECTION);
+	}
+	
+	private void receiveDisconnectionPacket(Packet5Disconnect packet) {
+		requestDropConnection(false, packet.getReason());
+	}
+	
 	@ThreadSafe(callerThread = "Unknown")
 	public void sendPacket(Packet packet) {
 		networkWorker.givePacketToSend(packet);
 	}
 	
 	@ThreadSafe(callerThread = "Unknown")
-	public void requestDropConnection() {
+	public void requestDropConnection(boolean byAction, int reason) {
 		if(!isDropConnectionCalled) {
 			KudesuNetwork.log(Level.INFO, "Closing connection...");
 			isNetworkReady = false;
 			isDropConnectionCalled = true;
-			TaskManager.executeOnce(this::dropConnectionInternal, "Drop Connection", THREAD_TERMINATION_TIME);
+			if(byAction) {
+				sendPacket(new Packet5Disconnect(reason));
+				while(!isDisconnectPacketSended) { //Wait for a packet sent by a normal pipeline to disconnect
+					try {
+						if(!Thread.currentThread().getName().contains(WORKER_THREAD_NAME)) {
+							Thread.sleep(10L); //Sleep while waiting packet to be sended, but not for worker thread!
+						}
+					} catch(InterruptedException ex) {
+						ex.printStackTrace();
+					}
+				}
+			}
+			TaskManager.executeOnce(() -> dropConnectionInternal(reason), "Drop Connection", THREAD_TERMINATION_TIME);
 		}
 	}
 	
@@ -173,7 +202,7 @@ public class NetworkHandler {
 	 * Must be called only from requestDropConnection method
 	 */
 	@ThreadSafe(callerThread = "Drop Connection")
-	private void dropConnectionInternal() {
+	private void dropConnectionInternal(int reason) {
 		if(isAlive()) {
 			try {
 				socket.close();
@@ -185,9 +214,9 @@ public class NetworkHandler {
 		base.onConnectionDropped(socket.getPort());
 		KudesuNetwork.log(Level.INFO, "Connection closed: " + socket.getInetAddress() + ":" + socket.getPort() + " / " + socket.getLocalPort());
 		if(networkSide == NetworkSide.CLIENT) {
-			clientListener.onDisconnection();
+			clientListener.onDisconnection(reason);
 		} else {
-			serverListener.onDisconnection(socket.getLocalPort());
+			serverListener.onDisconnection(socket.getLocalPort(), reason);
 		}
 	}
 	
@@ -239,6 +268,10 @@ public class NetworkHandler {
 	
 	public boolean isNetworkReady() {
 		return isNetworkReady;
+	}
+	
+	public void setDisconnectSended() {
+		isDisconnectPacketSended = true;
 	}
 	
 	public InputStream getInputStream() {

@@ -2,6 +2,7 @@ package ru.kudesunik.kudesunetwork.server;
 
 import java.net.InetAddress;
 
+import ru.kudesunik.kudesunetwork.annotations.ServerSide;
 import ru.kudesunik.kudesunetwork.handler.NetworkListener;
 import ru.kudesunik.kudesunetwork.packet.Packet;
 
@@ -12,6 +13,7 @@ import ru.kudesunik.kudesunetwork.packet.Packet;
  * @author Kudesunik
  *
  */
+@ServerSide
 public interface NetworkServerListener extends NetworkListener {
 	
 	public void bind(KudesuNetworkServer server);
@@ -26,5 +28,5 @@ public interface NetworkServerListener extends NetworkListener {
 	
 	public boolean onPing(int port, long id, long sendedTimestamp, long receivedTimestamp);
 	
-	public void onDisconnection(int port);
+	public void onDisconnection(int port, int reason);
 }

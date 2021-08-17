@@ -58,7 +58,7 @@ public class PingServerNetworkListener implements NetworkServerListener {
 	}
 	
 	@Override
-	public void onDisconnection(int port) {
-		
+	public void onDisconnection(int port, int reason) {
+		//No use
 	}
 }

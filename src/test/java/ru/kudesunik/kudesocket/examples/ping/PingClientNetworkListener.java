@@ -54,7 +54,7 @@ public class PingClientNetworkListener implements NetworkClientListener {
 	}
 	
 	@Override
-	public void onDisconnection() {
-		
+	public void onDisconnection(int reason) {
+		//No use
 	}
 }
