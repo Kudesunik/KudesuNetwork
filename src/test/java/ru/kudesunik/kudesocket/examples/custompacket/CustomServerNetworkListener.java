@@ -17,7 +17,7 @@ public class CustomServerNetworkListener implements NetworkServerListener {
 		packet.setCustomNumber1(packet.getCustomNumber1() ^ packet.getCustomNumber2());
 		packet.setCustomNumber2(packet.getCustomNumber2() ^ packet.getCustomNumber1());
 		packet.setCustomNumber1(packet.getCustomNumber1() ^ packet.getCustomNumber2());
-		server.sendPacket(packet, port);
+		server.sendPacket(port, packet);
 	}
 	
 	@Override
@@ -57,7 +57,7 @@ public class CustomServerNetworkListener implements NetworkServerListener {
 	}
 	
 	@Override
-	public void onDisconnection(int port) {
+	public void onDisconnection(int port, int reason) {
 		
 	}
 }

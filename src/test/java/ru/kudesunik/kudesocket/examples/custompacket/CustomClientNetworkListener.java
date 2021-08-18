@@ -50,7 +50,7 @@ public class CustomClientNetworkListener implements NetworkClientListener {
 	}
 	
 	@Override
-	public void onDisconnection() {
+	public void onDisconnection(int reason) {
 		
 	}
 }

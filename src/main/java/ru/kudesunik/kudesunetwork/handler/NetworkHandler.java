@@ -77,7 +77,7 @@ public class NetworkHandler {
 		this.workerExecutorService = Executors.newSingleThreadExecutor(WORKER_FACTORY);
 		this.networkWorker = new NetworkWorker(this, useProtocol);
 		this.networkReader = new NetworkReader(this, networkWorker, useProtocol);
-		this.isNetworkReady = false;
+		this.isNetworkReady = !parameters.getSendHandshake();
 		this.isDisconnectPacketSended = false;
 		this.isDropConnectionCalled = false;
 	}
@@ -130,6 +130,9 @@ public class NetworkHandler {
 		if(!result) {
 			KudesuNetwork.log(Level.ERROR, "Handshake failed!");
 			requestDropConnection();
+		} else if(parameters.getAuthorization() == null) {
+			KudesuNetwork.log(Level.INFO, "Handshake correct, no authorization, network ready!");
+			isNetworkReady = true;
 		}
 	}
 	
@@ -145,6 +148,7 @@ public class NetworkHandler {
 			KudesuNetwork.log(Level.ERROR, "Authorization failed!");
 			requestDropConnection();
 		} else {
+			KudesuNetwork.log(Level.INFO, "Authorization correct, network ready!");
 			isNetworkReady = true;
 		}
 	}
@@ -216,7 +220,7 @@ public class NetworkHandler {
 		if(networkSide == NetworkSide.CLIENT) {
 			clientListener.onDisconnection(reason);
 		} else {
-			serverListener.onDisconnection(socket.getLocalPort(), reason);
+			serverListener.onDisconnection(socket.getPort(), reason);
 		}
 	}
 	

@@ -90,6 +90,8 @@ public class NetworkWorker implements Runnable {
 			synchronized(this) {
 				notifyAll();
 			}
+		} else {
+			KudesuNetwork.log(Level.ERROR, "Network is not ready for packet sending! Packet id: " + packet.getId());
 		}
 	}
 	

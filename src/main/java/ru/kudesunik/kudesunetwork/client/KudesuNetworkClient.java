@@ -51,6 +51,13 @@ public class KudesuNetworkClient extends NetworkBase {
 			listener.onConnection(isConnected);
 			if(isConnected) {
 				clientHandler.start();
+				while(!clientHandler.isNetworkReady()) {
+					try {
+						Thread.sleep(100); //Sleep while handshake and authorization not received
+					} catch(InterruptedException ex) {
+						ex.printStackTrace();
+					}
+				}
 				KudesuNetwork.log(Level.INFO, "Network client started!");
 				return true;
 			}

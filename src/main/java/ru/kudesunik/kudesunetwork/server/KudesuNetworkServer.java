@@ -102,7 +102,7 @@ public class KudesuNetworkServer extends NetworkBase {
 	}
 	
 	@ThreadSafe(callerThread = "Unknown")
-	public void disconnectClient(int port, short reason) {
+	public void disconnectClient(int port, int reason) {
 		sendPacket(port, new Packet5Disconnect(reason));
 	}
 	
