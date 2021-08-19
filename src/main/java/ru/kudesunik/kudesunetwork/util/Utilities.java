@@ -44,6 +44,14 @@ public class Utilities {
 		return n;
 	}
 	
+	public static byte[] compress(byte[] data) {
+		return data; //TODO: Implementation
+	}
+	
+	public static byte[] decompress(byte[] data) {
+		return data; //TODO: Implementation
+	}
+	
 	private Utilities() {
 		//Class instantiation not allowed
 	}

@@ -6,9 +6,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.function.Consumer;
 
+import javax.crypto.spec.IvParameterSpec;
+
 import org.apache.logging.log4j.Level;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
+import ru.kudesunik.kudesunetwork.KudesuNetworkFlags;
 import ru.kudesunik.kudesunetwork.packet.Packet;
 import ru.kudesunik.kudesunetwork.packet.Packet4Raw;
 import ru.kudesunik.kudesunetwork.packet.PacketProgress;
@@ -54,15 +57,32 @@ public class NetworkReader implements Runnable {
 	private void readProtocolPacket() {
 		int packetId = 0;
 		try {
-			packetId = inputStream.read(); //Blocking input stream read first byte
+			packetId = inputStream.read(); //Blocking input stream read first byte (packet id)
 		} catch(IOException ex) {
 			handler.requestDropConnection();
 			return;
 		}
 		if((packetId > 0) && networkWorker.isPacketExist(packetId)) {
-			int packetSize;
+			int packetFlag = 0;
 			try {
-				packetSize = getPacketSize(inputStream);
+				packetFlag = inputStream.read(); //Blocking input stream read second byte (packet flag)
+			} catch(IOException ex) {
+				handler.requestDropConnection();
+				return;
+			}
+			byte[] iv = null;
+			if(KudesuNetworkFlags.checkFlag(packetFlag, KudesuNetworkFlags.ENCRYPTED)) {
+				iv = new byte[16];
+				try {
+					Utilities.readBytes(inputStream, iv, 0, iv.length);
+				} catch(IOException e) {
+					handler.requestDropConnection();
+					return;
+				}
+			}
+			int payloadSize;
+			try {
+				payloadSize = getPacketSize(inputStream);
 			} catch(IOException ex) {
 				KudesuNetwork.log(Level.ERROR, "Error on reading unknown packet");
 				handler.requestDropConnection();
@@ -70,24 +90,30 @@ public class NetworkReader implements Runnable {
 			}
 			Packet packet = networkWorker.getPacketContainer(packetId);
 			try {
-				byte[] dataArray = new byte[packetSize];
-				int readCount = packetSize / KudesuNetwork.MAX_DATA_SIZE;
+				byte[] payload = new byte[payloadSize];
+				int readCount = payloadSize / KudesuNetwork.MAX_DATA_SIZE;
 				for(int i = 0; i < readCount; i++) {
 					int currentReadCount = i * KudesuNetwork.MAX_DATA_SIZE;
-					Utilities.readBytes(inputStream, dataArray, currentReadCount, KudesuNetwork.MAX_DATA_SIZE);
+					Utilities.readBytes(inputStream, payload, currentReadCount, KudesuNetwork.MAX_DATA_SIZE);
 					if(!KudesuNetwork.isProtocolPacket(packet.getId())) {
-						progress.accept(new PacketProgress(packetId, packetSize, currentReadCount));
+						progress.accept(new PacketProgress(packetId, payloadSize, currentReadCount));
 					}
 				}
 				int totalReadCount = readCount * KudesuNetwork.MAX_DATA_SIZE;
-				Utilities.readBytes(inputStream, dataArray, totalReadCount, (packetSize - totalReadCount));
-				packet.read(new DataInputStream(new ByteArrayInputStream(dataArray)));
+				Utilities.readBytes(inputStream, payload, totalReadCount, (payloadSize - totalReadCount));
+				if(KudesuNetworkFlags.checkFlag(packetFlag, KudesuNetworkFlags.COMPRESSED)) {
+					payload = Utilities.decompress(payload);
+				}
+				if(iv != null) {
+					payload = handler.getCipher().decrypt(payload, new IvParameterSpec(iv));
+				}
+				packet.read(new DataInputStream(new ByteArrayInputStream(payload)));
 				if(!KudesuNetwork.isProtocolPacket(packet.getId())) {
-					progress.accept(new PacketProgress(packetId, packetSize, packetSize));
+					progress.accept(new PacketProgress(packetId, payloadSize, payloadSize));
 				}
 			} catch(IOException ex) {
 				ex.printStackTrace();
-				KudesuNetwork.log(Level.ERROR, "Error on reading packet id " + packetId + " with declared size of " + packetSize + " bytes");
+				KudesuNetwork.log(Level.ERROR, "Error on reading packet id " + packetId + " with declared size of " + payloadSize + " bytes");
 				handler.requestDropConnection();
 				return;
 			}

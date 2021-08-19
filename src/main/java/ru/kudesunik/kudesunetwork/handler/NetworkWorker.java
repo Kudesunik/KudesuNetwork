@@ -6,9 +6,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import javax.crypto.spec.IvParameterSpec;
+
 import org.apache.logging.log4j.Level;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
+import ru.kudesunik.kudesunetwork.KudesuNetworkFlags;
 import ru.kudesunik.kudesunetwork.annotations.NonNull;
 import ru.kudesunik.kudesunetwork.annotations.ThreadSafe;
 import ru.kudesunik.kudesunetwork.packet.Packet;
@@ -16,6 +19,8 @@ import ru.kudesunik.kudesunetwork.packet.Packet3Ping;
 import ru.kudesunik.kudesunetwork.packet.Packet4Raw;
 import ru.kudesunik.kudesunetwork.packet.Packet5Disconnect;
 import ru.kudesunik.kudesunetwork.parameters.PingParameters;
+import ru.kudesunik.kudesunetwork.util.NetworkCipher;
+import ru.kudesunik.kudesunetwork.util.Utilities;
 import ru.kudesunik.kudesunetwork.util.task.TaskManager;
 import ru.kudesunik.kudesunetwork.util.task.TaskManagerTask;
 
@@ -130,9 +135,26 @@ public class NetworkWorker implements Runnable {
 					KudesuNetwork.log(Level.ERROR, "Huge packet (" + packetData.size() + " bytes), send skipping, please split data to few packets!");
 					return;
 				}
-				overallData.writeByte(packetId);
-				overallData.writeInt(packetData.size());
-				overallData.write(data.toByteArray());
+				overallData.writeByte(packetId); //Write packet id (1 byte)
+				int packetFlag = 0;
+				if(handler.getParameters().isEncrypt()) {
+					packetFlag = KudesuNetworkFlags.appendFlag(packetFlag, KudesuNetworkFlags.ENCRYPTED);
+				}
+				if(handler.getParameters().isCompress()) {
+					packetFlag = KudesuNetworkFlags.appendFlag(packetFlag, KudesuNetworkFlags.COMPRESSED);
+				}
+				overallData.writeByte(packetFlag); //Write packet flag (1 byte)
+				byte[] payloadData = data.toByteArray();
+				if(KudesuNetworkFlags.checkFlag(packetFlag, KudesuNetworkFlags.ENCRYPTED)) {
+					IvParameterSpec iv = NetworkCipher.generateIV();
+					overallData.write(iv.getIV()); //Write encryption initialization vector (16 bytes)
+					payloadData = handler.getCipher().encrypt(payloadData, iv);
+				}
+				if(KudesuNetworkFlags.checkFlag(packetFlag, KudesuNetworkFlags.COMPRESSED)) {
+					payloadData = Utilities.compress(payloadData);
+				}
+				overallData.writeInt(payloadData.length); //Write payload data length
+				overallData.write(payloadData); //Write payload data
 			} catch(IOException ex) {
 				handler.requestDropConnection();
 			}

@@ -28,7 +28,7 @@ import ru.kudesunik.kudesunetwork.util.Utilities;
 
 public class KudesuNetwork {
 	
-	public static final int MAX_PACKET_SIZE = Integer.MAX_VALUE;
+	public static final int MAX_PACKET_SIZE = Integer.MAX_VALUE - 1024; //1024 is reserved value
 	public static final int MAX_DATA_SIZE = 65495;
 	
 	public static final String PROTOCOL_NAME = "KudesuNetwork";

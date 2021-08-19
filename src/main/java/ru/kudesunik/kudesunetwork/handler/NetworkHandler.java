@@ -24,6 +24,7 @@ import ru.kudesunik.kudesunetwork.packet.PacketProgress;
 import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.server.NetworkServerListener;
 import ru.kudesunik.kudesunetwork.util.NamedThreadFactory;
+import ru.kudesunik.kudesunetwork.util.NetworkCipher;
 import ru.kudesunik.kudesunetwork.util.task.TaskManager;
 
 public class NetworkHandler {
@@ -273,6 +274,10 @@ public class NetworkHandler {
 	
 	public Packet getPacketContainer(int packetId) {
 		return base.getPacketContainer(packetId);
+	}
+	
+	public NetworkCipher getCipher() {
+		return base.getCipher();
 	}
 	
 	public boolean isNetworkReady() {

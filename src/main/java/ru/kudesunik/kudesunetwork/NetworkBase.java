@@ -10,6 +10,7 @@ import ru.kudesunik.kudesunetwork.annotations.Nullable;
 import ru.kudesunik.kudesunetwork.packet.Packet;
 import ru.kudesunik.kudesunetwork.packet.PacketRegistrator;
 import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
+import ru.kudesunik.kudesunetwork.util.NetworkCipher;
 
 public abstract class NetworkBase {
 	
@@ -22,6 +23,8 @@ public abstract class NetworkBase {
 	
 	private final Int2ObjectMap<Packet> packets;
 	
+	private final NetworkCipher cipher;
+	
 	protected boolean isWorking;
 	
 	protected NetworkBase(int port, PacketRegistrator registrator, NetworkParameters parameters, boolean useProtocol) {
@@ -31,6 +34,26 @@ public abstract class NetworkBase {
 		this.packets = new Int2ObjectArrayMap<>();
 		this.isWorking = true;
 		registerPackets(registrator);
+		if(parameters.isEncrypt()) {
+			String authorization = parameters.getAuthorization();
+			if(authorization != null) {
+				this.cipher = new NetworkCipher(authorization);
+			} else {
+				this.cipher = new NetworkCipher(NetworkCipher.SALT);
+				KudesuNetwork.log(Level.INFO, "Not fully protected: authorization is disabled, default encryption will be applied");
+			}
+		} else {
+			if(useProtocol) {
+				KudesuNetwork.log(Level.INFO, "Very unsafe: encryption disabled, no data encryption will be applied");
+			} else {
+				KudesuNetwork.log(Level.INFO, "Raw data mode: no data stream encryption, encrypt by yourself");
+			}
+			cipher = null;
+		}
+	}
+	
+	public @Nullable NetworkCipher getCipher() {
+		return cipher;
 	}
 	
 	private void registerPackets(PacketRegistrator registrator) {

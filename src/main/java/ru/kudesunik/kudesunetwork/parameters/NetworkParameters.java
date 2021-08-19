@@ -8,12 +8,16 @@ import ru.kudesunik.kudesunetwork.annotations.Nullable;
 public class NetworkParameters {
 	
 	private boolean sendHandshake;
+	private boolean isEncrypt;
+	private boolean isCompress;
 	private PingParameters pingParameters;
 	
 	private String authorizationData;
 	
 	public NetworkParameters() {
 		this.sendHandshake = true;
+		this.isEncrypt = true;
+		this.isCompress = true;
 		this.authorizationData = null;
 		this.pingParameters = PingParameters.defaultPing();
 	}
@@ -32,6 +36,22 @@ public class NetworkParameters {
 	
 	public void setSendHandshake(boolean send) {
 		this.sendHandshake = send;
+	}
+	
+	public boolean isEncrypt() {
+		return isEncrypt;
+	}
+	
+	public void setEncrypt(boolean isEncrypt) {
+		this.isEncrypt = isEncrypt;
+	}
+	
+	public boolean isCompress() {
+		return isCompress;
+	}
+	
+	public void setCompress(boolean isCompress) {
+		this.isCompress = isCompress;
 	}
 	
 	public PingParameters getPingParameters() {
