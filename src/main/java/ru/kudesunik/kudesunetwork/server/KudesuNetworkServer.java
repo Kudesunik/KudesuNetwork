@@ -64,7 +64,7 @@ public class KudesuNetworkServer extends NetworkBase {
 		return true;
 	}
 	
-	@ThreadSafe(callerThread = "KudeSocket Connection")
+	@ThreadSafe(callerThread = "KudesuNetwork Connection")
 	private void startClient(Socket client) {
 		if(client.isConnected()) {
 			NetworkHandler clientHandler = null;

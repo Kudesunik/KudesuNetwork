@@ -142,10 +142,12 @@ public class NetworkReader implements Runnable {
 			return;
 		}
 		Packet4Raw packet = new Packet4Raw(firstByte, new byte[availableBytes + 1]);
+		byte[] array = new byte[availableBytes];
 		try {
-			byte[] array = new byte[availableBytes];
 			Utilities.readBytes(inputStream, array, 0, availableBytes);
-			packet.read(new DataInputStream(new ByteArrayInputStream(array)));
+			try(DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(array))) {
+				packet.read(dataInputStream);
+			}
 		} catch(IOException ex) {
 			KudesuNetwork.log(Level.ERROR, "Error on reading raw packet with declared size of " + (availableBytes + 1) + " bytes");
 			handler.requestDropConnection();

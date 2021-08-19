@@ -29,6 +29,8 @@ public class NetworkWorker implements Runnable {
 	private final NetworkHandler handler;
 	private final OutputStream outputStream;
 	
+	private final DataOutputStream outputStreamData;
+	
 	private final ConcurrentLinkedDeque<Packet> recievedPackets;
 	private final ConcurrentLinkedDeque<Packet> packetsToSend;
 	
@@ -40,6 +42,7 @@ public class NetworkWorker implements Runnable {
 		this.handler = handler;
 		this.pingParameters = handler.getParameters().getPingParameters();
 		this.outputStream = handler.getOutputStream();
+		this.outputStreamData = new DataOutputStream(outputStream);
 		this.recievedPackets = new ConcurrentLinkedDeque<>();
 		this.packetsToSend = new ConcurrentLinkedDeque<>();
 		this.isWorking = true;
@@ -128,14 +131,13 @@ public class NetworkWorker implements Runnable {
 			}
 			ByteArrayOutputStream data = new ByteArrayOutputStream();
 			DataOutputStream packetData = new DataOutputStream(data);
-			DataOutputStream overallData = new DataOutputStream(outputStream);
 			try {
 				packet.write(packetData);
 				if(packetData.size() > KudesuNetwork.MAX_PACKET_SIZE) {
 					KudesuNetwork.log(Level.ERROR, "Huge packet (" + packetData.size() + " bytes), send skipping, please split data to few packets!");
 					return;
 				}
-				overallData.writeByte(packetId); //Write packet id (1 byte)
+				outputStreamData.writeByte(packetId); //Write packet id (1 byte)
 				int packetFlag = 0;
 				if(handler.getParameters().isEncrypt()) {
 					packetFlag = KudesuNetworkFlags.appendFlag(packetFlag, KudesuNetworkFlags.ENCRYPTED);
@@ -143,18 +145,20 @@ public class NetworkWorker implements Runnable {
 				if(handler.getParameters().isCompress()) {
 					packetFlag = KudesuNetworkFlags.appendFlag(packetFlag, KudesuNetworkFlags.COMPRESSED);
 				}
-				overallData.writeByte(packetFlag); //Write packet flag (1 byte)
+				outputStreamData.writeByte(packetFlag); //Write packet flag (1 byte)
 				byte[] payloadData = data.toByteArray();
 				if(KudesuNetworkFlags.checkFlag(packetFlag, KudesuNetworkFlags.ENCRYPTED)) {
 					IvParameterSpec iv = NetworkCipher.generateIV();
-					overallData.write(iv.getIV()); //Write encryption initialization vector (16 bytes)
+					outputStreamData.write(iv.getIV()); //Write encryption initialization vector (16 bytes)
 					payloadData = handler.getCipher().encrypt(payloadData, iv);
 				}
 				if(KudesuNetworkFlags.checkFlag(packetFlag, KudesuNetworkFlags.COMPRESSED)) {
 					payloadData = Utilities.compress(payloadData);
 				}
-				overallData.writeInt(payloadData.length); //Write payload data length
-				overallData.write(payloadData); //Write payload data
+				outputStreamData.writeInt(payloadData.length); //Write payload data length
+				outputStreamData.write(payloadData); //Write payload data
+				data.close();
+				packetData.close();
 			} catch(IOException ex) {
 				handler.requestDropConnection();
 			}
@@ -169,7 +173,7 @@ public class NetworkWorker implements Runnable {
 	@ThreadSafe(callerThread = "KudesuNetwork Worker")
 	private void sendRawPacket(Packet packet) {
 		try {
-			packet.write(new DataOutputStream(outputStream));
+			packet.write(outputStreamData);
 		} catch(IOException ex) {
 			handler.requestDropConnection();
 		}
