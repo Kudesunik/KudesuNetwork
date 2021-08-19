@@ -1,5 +1,8 @@
 package ru.kudesunik.kudesunetwork.util;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 public class Utilities {
 	
 	public static String concat(String... strings) {
@@ -27,6 +30,18 @@ public class Utilities {
 			buffer.append(strings[i]);
 		}
 		return buffer.toString();
+	}
+	
+	public static int readBytes(InputStream inputStream, byte[] array, int offset, int length) throws IOException {
+		int n = 0;
+		while(n < length) {
+			int count = inputStream.read(array, offset + n, length - n);
+			if(count < 0) {
+				break;
+			}
+			n += count;
+		}
+		return n;
 	}
 	
 	private Utilities() {

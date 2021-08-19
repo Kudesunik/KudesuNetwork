@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.apache.logging.log4j.Level;
 
@@ -19,6 +20,7 @@ import ru.kudesunik.kudesunetwork.packet.Packet1Handshake;
 import ru.kudesunik.kudesunetwork.packet.Packet2Authorization;
 import ru.kudesunik.kudesunetwork.packet.Packet3Ping;
 import ru.kudesunik.kudesunetwork.packet.Packet5Disconnect;
+import ru.kudesunik.kudesunetwork.packet.PacketProgress;
 import ru.kudesunik.kudesunetwork.parameters.NetworkParameters;
 import ru.kudesunik.kudesunetwork.server.NetworkServerListener;
 import ru.kudesunik.kudesunetwork.util.NamedThreadFactory;
@@ -76,7 +78,8 @@ public class NetworkHandler {
 		this.readerExecutorService = Executors.newSingleThreadExecutor(READER_FACTORY);
 		this.workerExecutorService = Executors.newSingleThreadExecutor(WORKER_FACTORY);
 		this.networkWorker = new NetworkWorker(this, useProtocol);
-		this.networkReader = new NetworkReader(this, networkWorker, useProtocol);
+		Consumer<PacketProgress> receiveProgress = p -> listener.receiveProgress(p.getPacketId(), p.getTotalSize(), p.getCurrentSize());
+		this.networkReader = new NetworkReader(this, networkWorker, receiveProgress, useProtocol);
 		this.isNetworkReady = !parameters.getSendHandshake();
 		this.isDisconnectPacketSended = false;
 		this.isDropConnectionCalled = false;
@@ -92,6 +95,8 @@ public class NetworkHandler {
 			if(parameters.getAuthorization() != null) {
 				sendPacket(new Packet2Authorization(parameters.getAuthorization()));
 			}
+		} else {
+			isNetworkReady = true; //Network ready immediately when using raw mode (no protocol)
 		}
 	}
 	
@@ -176,16 +181,16 @@ public class NetworkHandler {
 	}
 	
 	@ThreadSafe(callerThread = "Unknown")
-	public void sendPacket(Packet packet) {
+	public synchronized void sendPacket(Packet packet) {
 		networkWorker.givePacketToSend(packet);
 	}
 	
 	@ThreadSafe(callerThread = "Unknown")
-	public void requestDropConnection(boolean byAction, int reason) {
+	public synchronized void requestDropConnection(boolean byAction, int reason) { //Replace synchronize to other
 		if(!isDropConnectionCalled) {
+			isDropConnectionCalled = true;
 			KudesuNetwork.log(Level.INFO, "Closing connection...");
 			isNetworkReady = false;
-			isDropConnectionCalled = true;
 			if(byAction) {
 				sendPacket(new Packet5Disconnect(reason));
 				while(!isDisconnectPacketSended) { //Wait for a packet sent by a normal pipeline to disconnect
@@ -205,7 +210,7 @@ public class NetworkHandler {
 	/**
 	 * Must be called only from requestDropConnection method
 	 */
-	@ThreadSafe(callerThread = "Drop Connection")
+	@ThreadSafe(callerThread = "Task Manager")
 	private void dropConnectionInternal(int reason) {
 		if(isAlive()) {
 			try {
@@ -224,7 +229,7 @@ public class NetworkHandler {
 		}
 	}
 	
-	@ThreadSafe(callerThread = "Drop Connection")
+	@ThreadSafe(callerThread = "Task Manager")
 	private void stopWorkerThreads() {
 		KudesuNetwork.log(Level.DEBUG, "Stop and shutdown network reader...");
 		networkReader.stop();
@@ -234,13 +239,13 @@ public class NetworkHandler {
 		shutdownThread(workerExecutorService, "Network worker");
 	}
 	
-	@ThreadSafe(callerThread = "Drop Connection")
+	@ThreadSafe(callerThread = "Task Manager")
 	private void shutdownThread(ExecutorService executorService, String threadName) {
 		executorService.shutdown();
 		awaitTermination(executorService, threadName);
 	}
 	
-	@ThreadSafe(callerThread = "Drop Connection")
+	@ThreadSafe(callerThread = "Task Manager")
 	private void awaitTermination(ExecutorService executorService, String threadName) {
 		try {
 			if(executorService.awaitTermination(THREAD_TERMINATION_TIME, TimeUnit.MILLISECONDS)) {

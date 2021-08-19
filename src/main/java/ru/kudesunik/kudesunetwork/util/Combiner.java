@@ -2,11 +2,11 @@ package ru.kudesunik.kudesunetwork.util;
 
 public class Combiner {
 	
-	private static final int BYTE_MASK = 0xff;
+	private static final int BYTE_MASK = 0xFF;
 	private static final int BYTE_SHIFT = 8;
-	private static final int SHORT_MASK = 0xffff;
+	private static final int SHORT_MASK = 0xFFFF;
 	private static final int SHORT_SHIFT = 16;
-	private static final long INT_MASK = 0xffffffffL;
+	private static final long INT_MASK = 0xFFFFFFFFL;
 	private static final int INT_SHIFT = 32;
 	
 	public static short combineBytes(byte b1, byte b2) {

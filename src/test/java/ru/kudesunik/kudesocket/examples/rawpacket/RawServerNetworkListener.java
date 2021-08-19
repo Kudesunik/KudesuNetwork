@@ -49,11 +49,16 @@ public class RawServerNetworkListener implements NetworkServerListener {
 	
 	@Override
 	public boolean onPing(int port, long id, long sendedTimestamp, long receivedTimestamp) {
-		return false;  //No use with raw packet
+		return false; //No use with raw packet
 	}
 	
 	@Override
-	public void onDisconnection(int port) {
-		
+	public void onDisconnection(int port, int reason) {
+		//No use
+	}
+	
+	@Override
+	public void receiveProgress(int packetId, int totalSize, int currentSize) {
+		//No use
 	}
 }

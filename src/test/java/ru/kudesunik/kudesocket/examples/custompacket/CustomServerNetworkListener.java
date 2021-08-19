@@ -60,4 +60,9 @@ public class CustomServerNetworkListener implements NetworkServerListener {
 	public void onDisconnection(int port, int reason) {
 		
 	}
+
+	@Override
+	public void receiveProgress(int packetId, int totalSize, int currentSize) {
+		System.out.println("Packet progress: " + packetId + " " + currentSize + " of " + totalSize);
+	}
 }

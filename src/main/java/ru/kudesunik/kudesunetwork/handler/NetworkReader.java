@@ -4,27 +4,32 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.function.Consumer;
 
 import org.apache.logging.log4j.Level;
 
 import ru.kudesunik.kudesunetwork.KudesuNetwork;
 import ru.kudesunik.kudesunetwork.packet.Packet;
 import ru.kudesunik.kudesunetwork.packet.Packet4Raw;
+import ru.kudesunik.kudesunetwork.packet.PacketProgress;
 import ru.kudesunik.kudesunetwork.util.Combiner;
+import ru.kudesunik.kudesunetwork.util.Utilities;
 
 public class NetworkReader implements Runnable {
 	
 	private final NetworkHandler handler;
 	private final InputStream inputStream;
-	private final NetworkWorker socketWorker;
+	private final NetworkWorker networkWorker;
+	private final Consumer<PacketProgress> progress;
 	private final boolean useProtocol;
 	
 	private volatile boolean isWorking;
 	
-	public NetworkReader(NetworkHandler handler, NetworkWorker socketWorker, boolean useProtocol) {
+	public NetworkReader(NetworkHandler handler, NetworkWorker networkWorker, Consumer<PacketProgress> progress, boolean useProtocol) {
 		this.handler = handler;
 		this.inputStream = handler.getInputStream();
-		this.socketWorker = socketWorker;
+		this.networkWorker = networkWorker;
+		this.progress = progress;
 		this.useProtocol = useProtocol;
 		this.isWorking = true;
 	}
@@ -40,6 +45,12 @@ public class NetworkReader implements Runnable {
 		}
 	}
 	
+	public static int getPacketSize(InputStream inputStream) throws IOException {
+		short s1 = Combiner.combineBytes((byte) inputStream.read(), (byte) inputStream.read());
+		short s2 = Combiner.combineBytes((byte) inputStream.read(), (byte) inputStream.read());
+		return Combiner.combineShorts(s1, s2);
+	}
+	
 	private void readProtocolPacket() {
 		int packetId = 0;
 		try {
@@ -48,25 +59,40 @@ public class NetworkReader implements Runnable {
 			handler.requestDropConnection();
 			return;
 		}
-		if((packetId > 0) && socketWorker.isPacketExist(packetId)) {
-			short packetSize;
+		if((packetId > 0) && networkWorker.isPacketExist(packetId)) {
+			int packetSize;
 			try {
-				packetSize = Combiner.combineBytes((byte) inputStream.read(), (byte) inputStream.read());
+				packetSize = getPacketSize(inputStream);
 			} catch(IOException ex) {
 				KudesuNetwork.log(Level.ERROR, "Error on reading unknown packet");
 				handler.requestDropConnection();
 				return;
 			}
-			Packet packet = socketWorker.getPacketContainer(packetId);
+			Packet packet = networkWorker.getPacketContainer(packetId);
 			try {
-				packet.read(new DataInputStream(new ByteArrayInputStream(inputStream.readNBytes(packetSize))));
+				byte[] dataArray = new byte[packetSize];
+				int readCount = packetSize / KudesuNetwork.MAX_DATA_SIZE;
+				for(int i = 0; i < readCount; i++) {
+					int currentReadCount = i * KudesuNetwork.MAX_DATA_SIZE;
+					Utilities.readBytes(inputStream, dataArray, currentReadCount, KudesuNetwork.MAX_DATA_SIZE);
+					if(!KudesuNetwork.isProtocolPacket(packet.getId())) {
+						progress.accept(new PacketProgress(packetId, packetSize, currentReadCount));
+					}
+				}
+				int totalReadCount = readCount * KudesuNetwork.MAX_DATA_SIZE;
+				Utilities.readBytes(inputStream, dataArray, totalReadCount, (packetSize - totalReadCount));
+				packet.read(new DataInputStream(new ByteArrayInputStream(dataArray)));
+				if(!KudesuNetwork.isProtocolPacket(packet.getId())) {
+					progress.accept(new PacketProgress(packetId, packetSize, packetSize));
+				}
 			} catch(IOException ex) {
+				ex.printStackTrace();
 				KudesuNetwork.log(Level.ERROR, "Error on reading packet id " + packetId + " with declared size of " + packetSize + " bytes");
 				handler.requestDropConnection();
 				return;
 			}
 			if(isWorking) {
-				socketWorker.receivePacket(packet);
+				networkWorker.receivePacket(packet);
 			}
 		} else if(packetId == (-1)) { //EOF
 			handler.requestDropConnection();
@@ -91,14 +117,16 @@ public class NetworkReader implements Runnable {
 		}
 		Packet4Raw packet = new Packet4Raw(firstByte, new byte[availableBytes + 1]);
 		try {
-			packet.read(new DataInputStream(new ByteArrayInputStream(inputStream.readNBytes(availableBytes))));
+			byte[] array = new byte[availableBytes];
+			Utilities.readBytes(inputStream, array, 0, availableBytes);
+			packet.read(new DataInputStream(new ByteArrayInputStream(array)));
 		} catch(IOException ex) {
 			KudesuNetwork.log(Level.ERROR, "Error on reading raw packet with declared size of " + (availableBytes + 1) + " bytes");
 			handler.requestDropConnection();
 			return;
 		}
 		if(isWorking) {
-			socketWorker.receivePacket(packet);
+			networkWorker.receivePacket(packet);
 		}
 	}
 	

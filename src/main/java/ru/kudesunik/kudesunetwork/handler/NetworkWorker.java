@@ -113,21 +113,25 @@ public class NetworkWorker implements Runnable {
 	private void sendPacket(@NonNull Packet packet) {
 		byte packetId = packet.getId();
 		if(handler.isPacketExist(packetId)) {
-			if(packet.getId() == Packet3Ping.ID) {
-				Packet3Ping pingPacket = (Packet3Ping) packet;
-				pingPacket.setTimestampSended();
-			}
 			if(packet.getId() == Packet4Raw.ID) {
 				sendRawPacket(packet);
 				return;
+			}
+			if(packet.getId() == Packet3Ping.ID) {
+				Packet3Ping pingPacket = (Packet3Ping) packet;
+				pingPacket.setTimestampSended();
 			}
 			ByteArrayOutputStream data = new ByteArrayOutputStream();
 			DataOutputStream packetData = new DataOutputStream(data);
 			DataOutputStream overallData = new DataOutputStream(outputStream);
 			try {
 				packet.write(packetData);
+				if(packetData.size() > KudesuNetwork.MAX_PACKET_SIZE) {
+					KudesuNetwork.log(Level.ERROR, "Huge packet (" + packetData.size() + " bytes), send skipping, please split data to few packets!");
+					return;
+				}
 				overallData.writeByte(packetId);
-				overallData.writeShort(packetData.size());
+				overallData.writeInt(packetData.size());
 				overallData.write(data.toByteArray());
 			} catch(IOException ex) {
 				handler.requestDropConnection();

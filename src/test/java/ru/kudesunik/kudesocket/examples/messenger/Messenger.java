@@ -3,11 +3,14 @@ package ru.kudesunik.kudesocket.examples.messenger;
 public class Messenger {
 	
 	private final MessengerGUI gui;
+	private final MessengerListener listener;
 	private final MessengerHandler handler;
 	
 	public Messenger() {
-		this.handler = new MessengerHandler();
-		this.gui = new MessengerGUI(handler);
+		this.listener = new MessengerListener();
+		this.gui = new MessengerGUI(listener);
+		this.handler = new MessengerHandler(gui);
+		this.listener.attachHandler(handler);
 	}
 	
 	private void start() {

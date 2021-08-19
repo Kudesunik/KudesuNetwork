@@ -10,7 +10,12 @@ public class RawClientNetworkListener implements NetworkClientListener {
 	private KudesuNetworkClient client;
 	
 	private void handleRawPacket(Packet4Raw packet) {
-		System.out.println("Raw packet received!");
+		byte[] data = packet.getData();
+		System.out.print("Raw packet received: ");
+		for(int i = 0; i < data.length; i++) {
+			System.out.print(data[i] + " ");
+		}
+		System.out.println();
 	}
 	
 	@Override
@@ -35,7 +40,7 @@ public class RawClientNetworkListener implements NetworkClientListener {
 	
 	@Override
 	public void onPacketReceive(Packet packet) {
-		if(packet instanceof Packet4Raw) {
+		if(packet.getId() == Packet4Raw.ID) {
 			handleRawPacket((Packet4Raw) packet);
 		}
 	}
@@ -46,7 +51,12 @@ public class RawClientNetworkListener implements NetworkClientListener {
 	}
 	
 	@Override
-	public void onDisconnection() {
-		
+	public void onDisconnection(int reason) {
+		//No use
+	}
+	
+	@Override
+	public void receiveProgress(int packetId, int totalSize, int currentSize) {
+		//No use
 	}
 }

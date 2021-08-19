@@ -28,13 +28,16 @@ import ru.kudesunik.kudesunetwork.util.Utilities;
 
 public class KudesuNetwork {
 	
-	public static final Level LOGGER_LEVEL = Level.DEBUG;
-	
-	private static final Logger LOGGER;
+	public static final int MAX_PACKET_SIZE = Integer.MAX_VALUE;
+	public static final int MAX_DATA_SIZE = 65495;
 	
 	public static final String PROTOCOL_NAME = "KudesuNetwork";
 	
 	public static final short PROTOCOL_VERSION = 1;
+	
+	public static final Level LOGGER_LEVEL = Level.DEBUG;
+	
+	private static final Logger LOGGER;
 	
 	@PermanentAllocation
 	private static final Int2ObjectMap<Packet> protocolPackets = new Int2ObjectArrayMap<>();

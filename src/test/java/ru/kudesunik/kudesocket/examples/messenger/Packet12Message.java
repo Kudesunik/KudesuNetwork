@@ -10,6 +10,12 @@ public class Packet12Message implements Packet {
 	
 	public static final int ID = 12;
 	
+	private Message message;
+	
+	public Packet12Message(Message message) {
+		this.message = message;
+	}
+	
 	@Override
 	public byte getId() {
 		return ID;
@@ -17,12 +23,22 @@ public class Packet12Message implements Packet {
 	
 	@Override
 	public void write(DataOutputStream data) throws IOException {
-		
+		String login = message.getLogin();
+		if(login != null) {
+			data.writeUTF(message.getLogin());
+		} else {
+			data.writeUTF("");
+		}
+		data.writeUTF(message.getText());
 	}
 	
 	@Override
 	public void read(DataInputStream data) throws IOException {
-		
+		message = new Message(data.readUTF(), data.readUTF());
+	}
+	
+	public Message getMessage() {
+		return message;
 	}
 	
 	@Override

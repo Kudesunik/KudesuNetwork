@@ -53,4 +53,9 @@ public class CustomClientNetworkListener implements NetworkClientListener {
 	public void onDisconnection(int reason) {
 		
 	}
+
+	@Override
+	public void receiveProgress(int packetId, int totalSize, int currentSize) {
+		//No use
+	}
 }

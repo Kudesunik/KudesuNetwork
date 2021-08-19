@@ -31,7 +31,8 @@ public class Packet4Raw implements Packet {
 	
 	@Override
 	public void read(DataInputStream data) throws IOException {
-		byte[] dataArray = data.readAllBytes();
+		byte[] dataArray = new byte[data.available()];
+		data.read(dataArray);
 		System.arraycopy(dataArray, 0, this.data, 1, dataArray.length);
 	}
 	

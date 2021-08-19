@@ -2,16 +2,21 @@ package ru.kudesunik.kudesocket.examples.messenger;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
+import java.util.Optional;
 
+import javax.imageio.ImageIO;
+import javax.swing.AbstractAction;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class MessengerListener implements ActionListener {
 	
-	private final MessengerGUI gui;
-	private final MessengerHandler handler;
+	private MessengerHandler handler;
 	
-	public MessengerListener(MessengerGUI gui, MessengerHandler handler) {
-		this.gui = gui;
+	public void attachHandler(MessengerHandler handler) {
 		this.handler = handler;
 	}
 	
@@ -21,15 +26,27 @@ public class MessengerListener implements ActionListener {
 		if(source instanceof JButton) {
 			JButton button = (JButton) source;
 			switch(button.getName()) {
-			case "Create server":
-				startServer();
+			case "Start server":
+				if(!handler.isServerWorking()) {
+					handler.startServer();
+				} else {
+					handler.stopServer();
+				}
 				break;
 			case "Connect":
 				if(handler.isClientConnected()) {
-					disconnect();
+					handler.disconnect(MessengerHandler.DISCONNECT_USER, true);
 				} else {
-					connect();
+					handler.connect();
 				}
+				break;
+			case "Send":
+				if(handler.isClientConnected()) {
+					handler.sendMessage();
+				}
+				break;
+			case "Image":
+				sendImage();
 				break;
 			default:
 				break;
@@ -37,46 +54,37 @@ public class MessengerListener implements ActionListener {
 		}
 	}
 	
-	private void startServer() {
-		int port = gui.getPort();
-		if(port != 0) {
-			gui.setInformation("Starting server...");
-			if(handler.startServer(port)) {
-				gui.setInformation("Server started!");
-				gui.setServerStatus("Working");
-			}
-		} else {
-			gui.setInformation("Server port not valid!");
-		}
-	}
-	
-	private void connect() {
-		String address = gui.getAddress();
-		int port = gui.getPort();
-		String login = gui.getLogin();
-		String password = gui.getPassword();
-		if((address != null) && !address.isEmpty() && (port != 0)) {
-			if((login != null) && !login.isEmpty() && (password != null) && !password.isEmpty()) {
-				gui.setInformation("Connecting to client...");
-				if(handler.connectToServer(address, port, login, password)) {
-					gui.setConnection(true);
-					gui.setInformation("Client connected to server!");
-					gui.setClientStatus("Connected");
-				} else {
-					gui.setInformation("Connection failed!");
+	private void sendImage() {
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setAcceptAllFileFilterUsed(false);
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("Images", "png", "jpg");
+		fileChooser.addChoosableFileFilter(filter);
+		int returnValue = fileChooser.showOpenDialog(null);
+		if(returnValue == JFileChooser.APPROVE_OPTION) {
+			File selectedFile = fileChooser.getSelectedFile();
+			String extension = getFileExtension(selectedFile.getAbsolutePath()).orElse("");
+			if(!extension.isEmpty()) {
+				try {
+					handler.sendImage(ImageIO.read(selectedFile), extension);
+				} catch(IOException ex) {
+					ex.printStackTrace();
 				}
-			} else {
-				gui.setInformation("Credentials not valid");
 			}
-		} else {
-			gui.setInformation("Connection address or port not valid");
 		}
 	}
 	
-	private void disconnect() {
-		handler.disconnectFromServer();
-		gui.setInformation("Client disconnected from server!");
-		gui.setClientStatus("Disconnected");
-		gui.setConnection(false);
+	private Optional<String> getFileExtension(String filename) {
+		return Optional.ofNullable(filename).filter(f -> f.contains(".")).map(f -> f.substring(filename.lastIndexOf(".") + 1));
+	}
+	
+	@SuppressWarnings("serial")
+	public class MessengerEnterListener extends AbstractAction {
+		
+		@Override
+		public void actionPerformed(ActionEvent event) {
+			if(handler.isClientConnected()) {
+				handler.sendMessage();
+			}
+		}
 	}
 }

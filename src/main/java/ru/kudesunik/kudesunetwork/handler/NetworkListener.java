@@ -8,5 +8,6 @@ package ru.kudesunik.kudesunetwork.handler;
  *
  */
 public interface NetworkListener {
-	//General interface
+	
+	public void receiveProgress(int packetId, int totalSize, int currentSize);
 }

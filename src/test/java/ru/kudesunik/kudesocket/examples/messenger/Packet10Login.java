@@ -21,7 +21,7 @@ public class Packet10Login implements Packet {
 	public Packet10Login() {
 		//Registrator constructor
 	}
-
+	
 	@Override
 	public byte getId() {
 		return ID;

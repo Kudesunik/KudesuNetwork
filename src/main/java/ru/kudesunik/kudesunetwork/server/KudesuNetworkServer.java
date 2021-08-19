@@ -74,9 +74,18 @@ public class KudesuNetworkServer extends NetworkBase {
 				ex.printStackTrace();
 			}
 			if(clientHandler != null) {
-				handlers.put(client.getPort(), clientHandler);
+				handlers.put(getPort(client), clientHandler);
+				KudesuNetwork.log(Level.INFO, "Client connected: " + getPort(client));
 				clientHandler.start();
 			}
+		}
+	}
+	
+	private int getPort(Socket client) {
+		if(getPort() == client.getLocalPort()) {
+			return client.getPort();
+		} else {
+			return client.getLocalPort();
 		}
 	}
 	

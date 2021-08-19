@@ -33,7 +33,7 @@ public class TaskManager {
 	private final ScheduledExecutorService executor;
 	
 	private TaskManager() {
-		this.threadFactory = new NamedThreadFactory("Task manager thread", true);
+		this.threadFactory = new NamedThreadFactory("Task Manager", true);
 		this.executor = Executors.newScheduledThreadPool(1, threadFactory);
 	}
 	

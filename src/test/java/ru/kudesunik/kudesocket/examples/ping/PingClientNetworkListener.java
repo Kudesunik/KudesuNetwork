@@ -57,4 +57,9 @@ public class PingClientNetworkListener implements NetworkClientListener {
 	public void onDisconnection(int reason) {
 		//No use
 	}
+
+	@Override
+	public void receiveProgress(int packetId, int totalSize, int currentSize) {
+		//No use
+	}
 }

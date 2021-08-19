@@ -61,4 +61,9 @@ public class PingServerNetworkListener implements NetworkServerListener {
 	public void onDisconnection(int port, int reason) {
 		//No use
 	}
+
+	@Override
+	public void receiveProgress(int packetId, int totalSize, int currentSize) {
+		//No use
+	}
 }

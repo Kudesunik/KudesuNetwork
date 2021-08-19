@@ -16,8 +16,8 @@ public class MessengerPacketRegistrator implements PacketRegistrator {
 	public MessengerPacketRegistrator() {
 		this.loginPacket = new Packet10Login();
 		this.userPacket = new Packet11User();
-		this.messagePacket = new Packet12Message();
-		this.imagePacket = new Packet13Image();
+		this.messagePacket = new Packet12Message(null);
+		this.imagePacket = new Packet13Image(null, null);
 	}
 	
 	@Override
