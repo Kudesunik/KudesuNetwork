@@ -75,18 +75,14 @@ public class KudesuNetworkServer extends NetworkBase {
 			}
 			if(clientHandler != null) {
 				handlers.put(getPort(client), clientHandler);
-				KudesuNetwork.log(Level.INFO, "Client connected: " + getPort(client));
+				KudesuNetwork.log(Level.INFO, "Client connected at port: " + getPort(client));
 				clientHandler.start();
 			}
 		}
 	}
 	
 	private int getPort(Socket client) {
-		if(getPort() == client.getLocalPort()) {
-			return client.getPort();
-		} else {
-			return client.getLocalPort();
-		}
+		return (getPort() == client.getLocalPort()) ? client.getPort() : client.getLocalPort();
 	}
 	
 	@ThreadSafe(callerThread = "Unknown")

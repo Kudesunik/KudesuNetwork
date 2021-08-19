@@ -191,7 +191,7 @@ public class NetworkHandler {
 			isDropConnectionCalled = true;
 			KudesuNetwork.log(Level.INFO, "Closing connection...");
 			isNetworkReady = false;
-			if(byAction) {
+			if(byAction && useProtocol) {
 				sendPacket(new Packet5Disconnect(reason));
 				while(!isDisconnectPacketSended) { //Wait for a packet sent by a normal pipeline to disconnect
 					try {
