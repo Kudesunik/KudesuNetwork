@@ -38,14 +38,14 @@ In general, I advise you to look at the examples in the tests section, it is sim
 Protocols list and details
 
 #### Transport layer
-- [x] TCP
-- [ ] UDP
+- [x] TCP (using by Raw, Kudesu, HTTP / HTTPS, WebSocket)
+- [ ] UDP (using by Raw, Kudesu)
 
-#### Application protocol
-- [x] Raw
-- [x] Kudesu (custom)
-- [ ] HTTP
-- [ ] WebSocket
+#### Application layer
+- [x] Raw (no protocol) (client, server)
+- [x] Kudesu (custom protocol) (client, server)
+- [ ] HTTP / HTTPS (client, server)
+- [ ] WebSocket (client, server)
 
 #### Send / Receive details 
 ![image](https://user-images.githubusercontent.com/3079145/130105989-4c9ba800-10bf-4b82-9e9a-72cc8e4bdbeb.png)
