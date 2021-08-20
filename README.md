@@ -35,10 +35,22 @@ In general, I advise you to look at the examples in the tests section, it is sim
 
 ### Description
 
+Protocols list and details
+
+#### Transport layer
+- [x] TCP
+- [ ] UDP
+
+#### Application protocol
+- [x] Raw
+- [x] Kudesu (custom)
+- [ ] HTTP
+- [ ] WebSocket
+
 #### Send / Receive details 
 ![image](https://user-images.githubusercontent.com/3079145/130105989-4c9ba800-10bf-4b82-9e9a-72cc8e4bdbeb.png)
 
-#### Protocol details 
+#### Kudesu custom protocol details
 ![image](https://user-images.githubusercontent.com/3079145/130106263-568dd07d-d139-487e-b7f2-d632b319c109.png)
 
 ### Build 
